@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Survey Page</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://code.jquery.com/jquery.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="jumbotron">
+      <h1 class="text-left"><span class="fa fa-child"></span> Friend Finder</h1>
+      <hr>
+      <h2 class="text-left">
+        Survey Questions
+      </h2>
+      <br>
+
+    </div>
+
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-header">
+            <h3>All About You</h3>
+          </div>
+          <div class="card-body">
+            <form role="form">
+              <div class="form-group">
+                <label for="reserve-name">Name</label>
+                <input type="text" class="form-control" id="survey-name">
+              </div>
+              <div class="form-group">
+                <label for="reserve-phone">Link to Photo Image (Required)</label>
+                <input type="text" class="form-control" id="survey-photo">
+              </div>
+
+            </form>
+          </div>
+          <div class="card-body">
+            <div class="questions">
+            </div>
+            <br>
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary submit" id="myBtn">Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THE MODAL -->
+
+    <div id="myModal" class="modal">
+
+      <!-- MODAL CONTENT -->
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="modal-header">
+          <h2 class="modal-title"><strong>Your Closest Match!</strong></h2>
+        </div>
+        <div class="modal-body">
+          <h2 id="friendName"></h2>
+          <img id="friendPhoto" alt="Closest Friend">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary close" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+
+    </div>
+
+
+    <footer class="footer">
+      <div class="container">
+        <p><a href="/api/friends">API Friends List</a> |
+          <a href="https://github.com/paultex11/Friend-Finder">GitHub Repo</a>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+
+
+</html>
+
+<!-- BELOW CODE IS CRITICAL. IT HANDLES HOW FORM DATA IS SENT TO OUR SERVER -->
+<script type="text/javascript">
+  var questionData = [
+    "Your mind is always buzzing with unexplored ideas and plans.",
+    "Generally speaking, you rely more on your experience than your imagination.",
+    "You find it easy to stay relaxed and focused even when there is some pressure.",
+    "You rarely do something just out of sheer curiosity.",
+    "People can rarely upset you.",
+    "It is often difficult for you to relate to other people’s feelings.",
+    "In a discussion, truth should be more important than people’s sensitivities.",
+    "You rarely get carried away by fantasies and ideas.",
+    "You think that everyone’s views should be respected regardless of whether they are supported by facts or not.",
+    "You feel more energetic after spending time with a group of people."
+  ];
+  for (var i = 0; i < questionData.length; i++) {
+    $(".questions").append(
+      "<div class='my-3'><h3>Question " +
+      (i + 1) + "</h3><h5>" + questionData[i] + "</h5><select class='chosen-select validate' id='q" + (i + 1)
+      + "'><option value='' selected='selected'>select a value</option><option value='1'>1 (Strongly Disagree)</option><option value='2'>2</option><option value='3'>3</option><option value='4'>4</option><option value='5'>5 (Strongly Agree)</option></div>"
+    )
+  };
+  // GET THE MODAL
+  var modal = document.getElementById('myModal');
+  // WHEN USER CLICKS X OR CLOSE BUTTON, MODAL CLOSES
+  $('.close').on("click ", function () {
+    modal.style.display = "none";
+  });
+  // WHEN USER CLICK ANYWHERE OUTSIDE MODAL CLOSES
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+  $(".submit").on("click", function (event) {
+    event.preventDefault();
+    // VALIDATE FUNCTION
+    function validateSurvey() {
+      var valid = true;
+      // VERIFY NAME
+      var name = $("#survey-name").val().trim();
+      if (name === '') {
+        valid = false;
+      }
+      // VERIFY PHOTO URL
+      var regex = /(http|https):\/\/(\w+:{0,1}\w*)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/;
+      var photoUrl = $("#survey-photo").val().trim();
+      if (photoUrl === '') {
+        valid = false;
+      } else if ((!regex.test(photoUrl))){
+        alert("Please write a valid image source URL!");
+        valid = false;
+      }
+      // VERIFY THE SCORES
+      $('.validate').each(function () {
+        // console.log($(this).val());
+        if ($(this).val() === "") {
+          valid = false;
+        }
+      });
+      return valid;
+    }
+    // GRAB DATA FOR NEW FRIEND ENTRY
+    if (validateSurvey() === true) {
+      var newFriend = {
+        name: $("#survey-name").val().trim(),
+        photo: $("#survey-photo").val().trim(),
+        scores: [
+          $("#q1").val(),
+          $("#q2").val(),
+          $("#q3").val(),
+          $("#q4").val(),
+          $("#q5").val(),
+          $("#q6").val(),
+          $("#q7").val(),
+          $("#q8").val(),
+          $("#q9").val(),
+          $("#q10").val()
+        ]
+      }
+      console.log(newFriend);
+      $.post("/api/friends", newFriend, function (data) {
+        $("#friendName ").text(data.name);
+        $('#friendPhoto').attr("src", data.photo);
+      });
+      // SHOW MODAL
+      modal.style.display = "block";
+ 
+      $("#survey-name").val("");
+      $("#survey-photo").val("");
+      $("#q1").val("");
+      $("#q2").val("");
+      $("#q3").val("");
+      $("#q4").val("");
+      $("#q5").val("");
+      $("#q6").val("");
+      $("#q7").val("");
+      $("#q8").val("");
+      $("#q9").val("");
+      $("#q10").val("");
+    } else {
+      alert("Please fill out all fields!");
+    }
+    return false;
+  });
+</script>
